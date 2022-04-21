@@ -2,12 +2,12 @@ import ImageGalleryItem from "../ImageGalleryItem/ImageGalleryItem";
 import Button from '../Button/Button';
 import PropTypes from 'prop-types';
 
-export default function ImageGallery({ gallery, page, isLoading, totalItems, loadMore, showModal } ) {
-    const theRest = (totalItems - page * 12);
+export default function ImageGallery({ gallery, page, perPage, isLoading, totalItems, loadMore, showModal } ) {
+    const theRest = (totalItems - page * perPage);
     return (
         <>
             <ul className="ImageGallery"> 
-            {gallery.map(item => (
+                {gallery.map(item => (
                 <ImageGalleryItem
                     key={item.id}
                     item={item}
@@ -21,6 +21,7 @@ export default function ImageGallery({ gallery, page, isLoading, totalItems, loa
 ImageGallery.propTypes = {
     gallery: PropTypes.array,
     page: PropTypes.number,
+    perPage: PropTypes.number,
     totalItems: PropTypes.number,
     loadMore: PropTypes.func,
     isLoading: PropTypes.bool,

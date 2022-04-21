@@ -1,108 +1,84 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import "./styles.css";
 import Searchbar from './SearchBar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Loader from './Loader/Loader';
 import Modal from './Modal/Modal';
 
+export function App() {
+  const PERPAGE = 12;
+  const [searchName, setSearchName] = useState("");
+  const [gallery, setGallery] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [currentImg, setCurrentImg] = useState({});
+  const [err, setErr] = useState(null);
 
-export class App extends Component {
-  static PERPAGE = 12;
-
-  state = {
-    searchName: "",
-    gallery: [],
-    page: 1,
-    totalItems: 0,
-    isLoading: false,
-    showModal: false,
-    currentImg: {},
-    err: null,
-  }
-      
-  componentDidMount() {
-    window.document.addEventListener('keydown', this.handleEsc);
-
-  }
-  componentWillUnmount() {
-    window.document.removeEventListener('keydown', this.handleEsc);
-  }
-  componentDidUpdate(_, prevState) {
-    if (prevState.searchName !== this.state.searchName ||
-      prevState.page !== this.state.page) {
-      this.doQuery();
-    }
-    if (prevState.gallery.length !== 0 &
-      prevState.gallery.length < this.state.gallery.length) {
-      window.scrollBy({
-        top: window.innerHeight - 200,
-        behavior: 'smooth',
-      })
-    }
-  }
-  doQuery() {
+  useEffect(() => {
+    if (!searchName) return;
+    console.log("useEffect");
     const URL = "https://pixabay.com/api/";
-    const key = "25089539-92235f01f3468a6ac8c56a646";
-    const { page, searchName } = this.state;
-    this.setState({ isLoading: true });
-    this.doFetch(URL, key, page, searchName);
-  }
-  doFetch(URL, key, page, searchName) {
-    fetch(`${URL}?q=${searchName}&page=${page}&key=${key}&image_type=photo&orientation=horizontal&per_page=${App.PERPAGE}`)
-      .then(resp => resp.json())
-      .then(gallery => {
-        if (gallery.hits.length === 0) {
-          return Promise.reject(new Error("поиск не дал результата"))
-        }
-        this.handleResponse(gallery);
-      })
-      .catch(err => this.setState({ err }))
-  }
-  handleResponse(gallery) {
-    this.state.gallery.length === 0 ?
-    this.setState({ gallery: gallery.hits, totalItems: gallery.totalHits, isLoading: false, err: null }) :
-    this.setState(prev => ({ gallery: [...prev.gallery, ...gallery.hits], isLoading: false, err: null }));
-  }
-  onSubmit = (evt) => {
-    evt.preventDefault();
-    this.setState({
-      searchName: evt.target.elements.searchName.value.trim().toLowerCase(),
-      page: 1,
-      gallery: []
+    const KEY = "25089539-92235f01f3468a6ac8c56a646";
+    setIsLoading(true);
+    const doFetch = (() => {
+      fetch(`${URL}?q=${searchName}&page=${page}&key=${KEY}&image_type=photo&orientation=horizontal&per_page=${PERPAGE}`)
+        .then(resp => resp.json())
+        .then(gallery => {
+          if (gallery.hits.length === 0) {
+            return Promise.reject(new Error("поиск не дал результата"))
+          }
+          handleResponse(gallery);
+        })
+        .catch(err => setErr(err))
     });
-  }
-  loadMore = () => {
+    doFetch()
+  }, [page, searchName])
 
-    this.setState(prev => ({page: prev.page + 1}))
+  const handleResponse = (gallery) => {
+    gallery.length === 0 ? setGallery(gallery.hits) : setGallery(prev => [...prev, ...gallery.hits]);
+    setTotalItems(gallery.totalHits);
+    setIsLoading(false);
+    setErr(null);
   }
-  toggleModal = (img) => {
-    this.setState(prev => ({ showModal: !prev.showModal, currentImg: img }))
-  }
-  handleOverlayClick = (evt) => {
-    if (evt.target === evt.currentTarget) this.toggleModal({})
-  }
-  handleEsc = (evt) => {
-    if(evt.code === 'Escape') this.toggleModal({})
-  } 
 
-  render() {
-    const { gallery, page, totalItems, isLoading, showModal, currentImg, err } = this.state;
-      return (
+  const onSubmit = (evt) => {
+    evt.preventDefault();
+    setSearchName(evt.target.elements.searchName.value.trim().toLowerCase());
+    setPage(1);
+    setGallery([]);
+  }
+  const loadMore = () => setPage(page => page + 1)
+
+  const handleOverlayClick = (evt) => {
+    if (evt.target === evt.currentTarget) toggleModal({})
+  }
+
+  const toggleModal = (img) => {
+    setShowModal(!showModal);
+    setCurrentImg(img)
+  }
+  const handleEsc = (evt) => {
+    if (evt.code === 'Escape') toggleModal({})
+  }
+
+  return (
     <div>
-          <Searchbar onSubmit={this.onSubmit} />
-          {err && <p className="error">Ошибка, {err.message}</p>}
-        {gallery.length !== 0 &&
-          <ImageGallery
-            gallery={gallery}
-            page={page}
-            totalItems={totalItems}
-            loadMore={this.loadMore}
-            isLoading={isLoading}
-            showModal={this.toggleModal} />
-        }
-          <Loader loading={isLoading}/>
-          {showModal && <Modal handleOverlayClick={this.handleOverlayClick} currentImg={currentImg }/>}
+      <Searchbar onSubmit={onSubmit} />
+      {err && <p className="error">Ошибка, {err.message}</p>}
+      {gallery.length !== 0 &&
+        <ImageGallery
+          gallery={gallery}
+          page={page}
+          perPage={PERPAGE}
+          totalItems={totalItems}
+          loadMore={loadMore}
+          isLoading={isLoading}
+          showModal={toggleModal} />
+      }
+      <Loader loading={isLoading} />
+      {showModal && <Modal handleOverlayClick={handleOverlayClick} onEsc={handleEsc} currentImg={currentImg} />}
     </div>
   );
-  }
 }
