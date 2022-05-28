@@ -12,8 +12,8 @@ export default function ImageGallery({ gallery, page, perPage, isLoading, totalI
                     key={item.id}
                     item={item}
                     onClick={showModal} />
-            ))}
-        </ul>
+                ))}
+            </ul>
             {theRest > 0 && !isLoading && <Button loadMore={loadMore}/>}
         </>
     )

@@ -8,11 +8,10 @@ export default function Modal({ currentImg, onEsc, handleOverlayClick }) {
 
     useEffect(() => {
       window.document.addEventListener('keydown', onEsc);
-    return () => {
-      window.document.removeEventListener('keydown', onEsc)
-    }
-    }, [onEsc]
-  )
+      return () => {
+        window.document.removeEventListener('keydown', onEsc)
+      }
+    }, [onEsc])
     return createPortal(
         <div className="Overlay" onClick={ handleOverlayClick}>
             <div className="Modal">
@@ -21,7 +20,7 @@ export default function Modal({ currentImg, onEsc, handleOverlayClick }) {
         </div>, modalRoot
     )
 }
-Modal.prototype = {
+Modal.propType = {
     currentImg: PropTypes.object,
     handleOverlayClick: PropTypes.func,
     onEsc: PropTypes.func
